@@ -54,22 +54,26 @@ public class FPicker<FPV: FPickerValue>: ObservableObject, FField {
     @Published fileprivate var value: FPV {
         didSet {
             setError(nil)
-            if let listener = listeners_OnChange {
-                listener()
-            }
+            onChangeListener.trigger()
         }
     }
     @Published var error: String?
     
+    public var onChange: OnChangeListener {
+        get { return onChangeListener }
+    }
+    
+    fileprivate var onChangeListener: OnChangeListener
+    
     fileprivate var nullValue: AnyObject?
-    fileprivate var listeners_OnChange: (() -> Void)?
     
     public init(selection: [FPV], nullValue: AnyObject? = nil) {
         self.selection = selection
         self.value = selection[0]
         self.error = nil
         self.nullValue = nullValue
-        self.listeners_OnChange = nil
+        
+        self.onChangeListener = OnChangeListener()
     }
             
     public func getValue() -> AnyObject {
@@ -84,10 +88,6 @@ public class FPicker<FPV: FPickerValue>: ObservableObject, FField {
     
     public func setError(_ error: String?) {
         self.error = error
-    }
-    
-    public func setListener_OnChange(execute listener: @escaping () -> Void) {
-        listeners_OnChange = listener
     }
     
     public func setValue(_ value: AnyObject) {

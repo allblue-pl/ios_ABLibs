@@ -7,8 +7,9 @@ public struct FDateView: View {
     @ObservedObject var field: FDate
     let label: String?
     let closeText: String
+    let copyCallback: (() -> Void)?
     
-    public init(_ field: FField, label: String?, closeText: String) {
+    public init(_ field: FField, label: String? = nil, closeText: String, copyCallback: (() -> Void)? = nil) {
         guard let parsedField = field as? FDate else {
             fatalError("FDate -> Wrong field type.")
         }
@@ -16,13 +17,24 @@ public struct FDateView: View {
         self.field = parsedField
         self.label = label
         self.closeText = closeText
+        self.copyCallback = copyCallback
     }
     
     public var body: some View {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
                 if let label {
-                    Text(label)
+                    HStack {
+                        Text(label)
+                        if let copyCallback {
+                            Button {
+                                UIPasteboard.general.string = field.date_Str
+                                copyCallback()
+                            } label: {
+                                Image(systemName: "document.on.document")
+                            }
+                        }
+                    }
                 }
                 
                 HStack {
@@ -64,8 +76,6 @@ public struct FDateView: View {
 }
 
 struct FDateModalView: View {
-//    @Environment(\.dismiss) var dismiss
-    
     @ObservedObject var field: FDate
     let label: String?
     let closeText: String
@@ -95,7 +105,6 @@ struct FDateModalView: View {
                     selection: $field.date,
                     displayedComponents: [.date]
                 )
-                .background(Color.gray)
                 .cornerRadius(10)
                 .datePickerStyle(.graphical)
                 
@@ -116,6 +125,7 @@ public class FDate: ObservableObject, FField {
         didSet {
             afterDateSet()
             showPicker = false
+            onChangeListener.trigger()
         }
     }
     @Published var date_Str: String
@@ -124,8 +134,14 @@ public class FDate: ObservableObject, FField {
     @Published fileprivate var error: String?
     @Published var showPicker: Bool
     
-    let defaultValue: Int64
-    let utc: Bool
+    public var onChange: OnChangeListener {
+        get { return onChangeListener }
+    }
+    
+    fileprivate var onChangeListener: OnChangeListener
+    
+    fileprivate let defaultValue: Int64
+    fileprivate let utc: Bool
     
     public init(defaultValue: Int64, utc: Bool = true) {
         self.date_Empty = true
@@ -136,6 +152,8 @@ public class FDate: ObservableObject, FField {
         self.utc = utc
         
         self.date = Date()
+        
+        self.onChangeListener = OnChangeListener()
     }
     
     func afterDateSet() {

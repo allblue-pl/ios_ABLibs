@@ -7,8 +7,9 @@ public struct FTextView: View {
     let label: String?
     let type: FTextType
     let keyboardType: UIKeyboardType
+    let copyCallback: (() -> Void)?
     
-    public init(_ field: FField, hint: String, label: String? = nil, type: FTextType = .text, keyboardType: UIKeyboardType = .default) {
+    public init(_ field: FField, hint: String, label: String? = nil, type: FTextType = .text, keyboardType: UIKeyboardType = .default, copyCallback: (() -> Void)? = nil) {
         guard let parsedField = field as? FText else {
             fatalError("FText -> Wrong field type.")
         }
@@ -18,12 +19,23 @@ public struct FTextView: View {
         self.label = label
         self.type = type
         self.keyboardType = keyboardType
+        self.copyCallback = copyCallback
     }
     
     public var body: some View {
         VStack(alignment: .leading) {
             if let label {
-                Text(label)
+                HStack {
+                    Text(label)
+                    if let copyCallback {
+                        Button {
+                            UIPasteboard.general.string = field.value
+                            copyCallback()
+                        } label: {
+                            Image(systemName: "document.on.document")
+                        }
+                    }
+                }
             }
             VStack {
                 switch type {
@@ -61,13 +73,22 @@ public class FText: ObservableObject, FField {
     @Published var value: String {
         didSet {
             setError(nil)
+            onChangeListener.trigger()
         }
     }
     @Published var error: String?
     
+    public var onChange: OnChangeListener {
+        get { return onChangeListener }
+    }
+    
+    fileprivate var onChangeListener: OnChangeListener
+    
     public init() {
         self.value = ""
         self.error = nil
+        
+        self.onChangeListener = OnChangeListener()
     }
     
     public func getValue() -> AnyObject {

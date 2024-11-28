@@ -2,6 +2,7 @@
 import SwiftUI
 
 public struct ABMessagesView: View {
+    var foregroundColor: Color
     @ObservedObject var model: ABMessages
     
     public var body: some View {
@@ -14,6 +15,9 @@ public struct ABMessagesView: View {
                         .frame(width: 32.0)
                         .symbolEffect(
                             .variableColor
+                        )
+                        .foregroundStyle(
+                            Color(foregroundColor)
                         )
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -53,8 +57,9 @@ public struct ABMessagesView: View {
         )
     }
     
-    public init(_ model: ABMessages) {
+    public init(_ model: ABMessages, foregroundColor: Color = Color.primary)  {
         self.model = model
+        self.foregroundColor = foregroundColor
     }
     
 }
