@@ -22,7 +22,7 @@ public class JSONArray {
         return json[index] is NSNull
     }
     
-    public func set(_ index: Int, value: AnyObject) {
+    public func set(_ index: Int, _ value: AnyObject) {
         json[index] = value
     }
 }
