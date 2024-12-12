@@ -3,9 +3,11 @@ import Foundation
 
 public class FForm {
     var fields: [String: FField]
+    var state: FForm_State
     
     public init() {
         self.fields = [String: FField]()
+        self.state = .notChanged
     }
     
     public func addField(_ fieldName: String, _ field: FField) {
@@ -18,6 +20,10 @@ public class FForm {
         }
         
         return field
+    }
+    
+    public func getState() -> FForm_State {
+        return state
     }
     
     public func getValue(_ fieldName: String) -> AnyObject? {
@@ -36,6 +42,14 @@ public class FForm {
         }
         
         return values
+    }
+    
+    public func notifyFieldValueChanged() {
+        if state == .noteSet {
+            return
+        }
+        
+        state = .changed
     }
     
     public func setValidatorInfo(validator: [String: AnyObject]) {
@@ -94,6 +108,14 @@ public class FForm {
             
             field.setValue(value)
         }
+        
+        state = .notChanged
     }
     
+}
+
+public enum FForm_State {
+    case noteSet
+    case notChanged
+    case changed
 }

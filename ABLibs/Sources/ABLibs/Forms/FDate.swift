@@ -85,14 +85,6 @@ struct FDateModalView: View {
             Color(UIColor.systemBackground)
                 .edgesIgnoringSafeArea(.all)
             VStack {
-                Button(action: {
-                    field.afterDateSet()
-                    field.showPicker = false
-                }, label: {
-                    Label(closeText, systemImage: "multiply.circle")
-                })
-                .padding(30)
-                
                 Rectangle()
                     .fill(Color(UIColor.systemBackground))
                     .onTapGesture {
@@ -114,6 +106,25 @@ struct FDateModalView: View {
                         field.afterDateSet()
                         field.showPicker = false
                     }
+                
+                HStack {
+                    Button(action: {
+//                        field.afterDateSet()
+                        field.showPicker = false
+                    }, label: {
+                        Label(Lang.t("FDate_Texts_Cancel"), systemImage: "multiply.circle")
+                            .foregroundStyle(Color.red)
+                    })
+                    .padding(30)
+                    
+                    Button(action: {
+                        field.afterDateSet()
+                        field.showPicker = false
+                    }, label: {
+                        Label(Lang.t("FDate_Texts_OK"), systemImage: "checkmark")
+                    })
+                    .padding(30)
+                }
             }
         }
     }

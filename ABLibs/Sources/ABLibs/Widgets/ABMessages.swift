@@ -21,20 +21,26 @@ public struct ABMessagesView: View {
                         )
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.black.opacity(0.8))
+                .background(Color.black.opacity(0.5))
             }
         }
         .alert(
             model.message_Title,
             isPresented: $model.message_Show,
             actions: {
-                Button("OK") {
+                Button("OK", role: .cancel) {
+                    if let callback = model.message_Callback {
+                        callback()
+                    }
                     
+                    model.clearMessage()
                 }
             },
             message: {
-                Image(systemName: "exclamationmark.triangle")
-                Text(model.message_Message)
+                HStack {
+                    Text(model.message_Message)
+                        .foregroundStyle(Color.red)
+                }
             }
         )
         .alert(
@@ -51,7 +57,6 @@ public struct ABMessagesView: View {
                 }
             },
             message: {
-                Image(systemName: "questionmark.square.dashed")
                 Text(model.confirmation_Message)
             }
         )
@@ -72,7 +77,6 @@ public struct ABToastView: View {
         if model.toast_Show {
             Text(self.model.toast_Message)
                 .padding(15)
-                .tint(.accentColor)
         }
         
     }
@@ -89,6 +93,7 @@ public class ABMessages: ObservableObject {
     @Published fileprivate var message_Show: Bool
     @Published fileprivate var message_Title: String
     @Published fileprivate var message_Message: String
+    @Published fileprivate var message_SystemImageName: String
     var message_Callback: (() -> Void)?
     
     @Published fileprivate var confirmation_Show: Bool
@@ -110,6 +115,7 @@ public class ABMessages: ObservableObject {
         self.message_Show = false
         self.message_Title = ""
         self.message_Message = ""
+        self.message_SystemImageName = "check"
         self.message_Callback = nil
         
         self.confirmation_Show = false
@@ -148,17 +154,22 @@ public class ABMessages: ObservableObject {
         }
     }
     
-    public func showMessage(_ title: String, _ message: String, callback: (() -> Void)?) {
+    public func showMessage(_ title: String, _ message: String, _ systemImageName: String, callback: (() -> Void)?) {
         message_Callback = callback
         DispatchQueue.main.async {
             self.message_Title = title
             self.message_Message = message
+            self.message_SystemImageName = systemImageName
             self.message_Show = true
         }
     }
     
     public func showMessage_Failure(_ title: String, _ content: String, callback: (() -> Void)? = nil) {
-        self.showMessage(title, content, callback: callback)
+        self.showMessage(title, content, "exclamationmark.circle.fill", callback: callback)
+    }
+    
+    public func showMessage_Success(_ title: String, _ content: String, callback: (() -> Void)? = nil) {
+        self.showMessage(title, content, "checkmark.circle.fill", callback: callback)
     }
     
     public func showToast(_ message: String) {
