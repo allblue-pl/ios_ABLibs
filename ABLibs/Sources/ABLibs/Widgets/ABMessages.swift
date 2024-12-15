@@ -75,8 +75,12 @@ public struct ABToastView: View {
     public var body: some View {
         
         if model.toast_Show {
-            Text(self.model.toast_Message)
-                .padding(15)
+            HStack {
+                Spacer()
+                Text(self.model.toast_Message)
+                    .padding(15)
+                Spacer()
+            }
         }
         
     }

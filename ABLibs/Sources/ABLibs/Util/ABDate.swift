@@ -19,7 +19,7 @@ public class ABDate {
     }
 
     static public func getTime() -> Int64 {
-        return Int64(Date().timeIntervalSince1970 / 1000)
+        return Int64(Date().timeIntervalSince1970)
     }
     
     static public func getTime_WithNegativeUTCOffset() -> Int64 {

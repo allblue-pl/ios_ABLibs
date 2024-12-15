@@ -132,6 +132,19 @@ struct FDateModalView: View {
 }
 
 public class FDate: ObservableObject, FField {
+    static private func parseValue(_ value: Int64, utc: Bool) -> Int64 {
+        var parsedValue = value
+        parsedValue -= Int64(TimeZone.current.secondsFromGMT())
+        if utc {
+            parsedValue = ABDate.getDay_UTC(time: parsedValue)
+        } else {
+            parsedValue += ABDate.getUTCOffset_Seconds(parsedValue)
+            parsedValue = ABDate.getDay(time: parsedValue)
+        }
+        
+        return parsedValue
+    }
+    
     @Published fileprivate var date: Date {
         didSet {
             afterDateSet()
@@ -160,9 +173,9 @@ public class FDate: ObservableObject, FField {
         self.error = nil
         self.showPicker = false
         self.defaultValue = defaultValue
+        print(defaultValue)
         self.utc = utc
-        
-        self.date = Date()
+        self.date = Date(timeIntervalSince1970: TimeInterval(FDate.parseValue(defaultValue, utc: utc)))
         
         self.onChangeListener = OnChangeListener()
     }
@@ -191,6 +204,7 @@ public class FDate: ObservableObject, FField {
     
     public func setValue(_ value: AnyObject) {
         if value is NSNull {
+            date = Date(timeIntervalSince1970: TimeInterval(FDate.parseValue(defaultValue, utc: utc)))
             date_Str = "-"
             date_Empty = true
             return
@@ -203,21 +217,8 @@ public class FDate: ObservableObject, FField {
             return
         }
         
-        date = Date(timeIntervalSince1970: TimeInterval(parseValue(parsedValue)))
+        date = Date(timeIntervalSince1970: TimeInterval(FDate.parseValue(parsedValue, utc: utc)))
         afterDateSet()
-    }
-    
-    private func parseValue(_ value: Int64) -> Int64 {
-        var parsedValue = value
-        parsedValue -= Int64(TimeZone.current.secondsFromGMT())
-        if utc {
-            parsedValue = ABDate.getDay_UTC(time: parsedValue)
-        } else {
-            parsedValue += ABDate.getUTCOffset_Seconds(parsedValue)
-            parsedValue = ABDate.getDay(time: parsedValue)
-        }
-        
-        return parsedValue
     }
     
 }
