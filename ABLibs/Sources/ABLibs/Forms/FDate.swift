@@ -173,7 +173,6 @@ public class FDate: ObservableObject, FField {
         self.error = nil
         self.showPicker = false
         self.defaultValue = defaultValue
-        print(defaultValue)
         self.utc = utc
         self.date = Date(timeIntervalSince1970: TimeInterval(FDate.parseValue(defaultValue, utc: utc)))
         

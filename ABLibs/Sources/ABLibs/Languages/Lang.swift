@@ -2,17 +2,36 @@
 import Foundation
 
 public class Lang {
+    private static var textTranslations = [Int: String]()
     
-    static private var textFn: (_ text: String) -> String = { text in
-        return "###NO_TEXT_FN_SET###"
+    public static func addTexts<T : RawRepresentable & CaseIterable>(_ texts: T.Type, translations: [T: String]? = nil) where T.RawValue == String {
+        for text in texts.allCases {
+            if let translations {
+                var textTranslationValue: String? = nil
+                for (translationText, translationValue) in translations {
+                    if (translationText.hashValue == text.hashValue) {
+                        textTranslationValue = translationValue
+                        break
+                    }
+                }
+                
+                textTranslations[text.hashValue] = textTranslationValue ?? text.rawValue
+            } else {
+                textTranslations[text.hashValue] = text.rawValue
+            }
+        }
     }
     
-    static public func setTextFn(execute fn: @escaping (_ text: String) -> String) {
-        Lang.textFn = fn
-    }
-    
-    static public func t(_ text: String) -> String {
-        return textFn(text)
+    public static func t(_ text: any Hashable, _ args: [String: String] = [:]) -> String {
+        if let textTranslation = textTranslations[text.hashValue] {
+            for (argName, argValue) in args {
+                textTranslation.replacingOccurrences(of: "{\(argName)}", with: argValue)
+            }
+            
+            return textTranslation
+        }
+        
+        return "#\(text) \(args)#"
     }
     
 }
