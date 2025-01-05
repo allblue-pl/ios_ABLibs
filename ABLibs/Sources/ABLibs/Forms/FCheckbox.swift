@@ -1,58 +1,62 @@
 
 import SwiftUI
 
-public struct FCheckboxView: View {
+public struct FCheckboxView<Label: View>: View {
     @ObservedObject var field: FCheckbox
-    let label: String
+    @ViewBuilder let label: Label
     
-    public init(_ field: FField, label: String) {
+    public init(_ field: FField, @ViewBuilder label: () -> Label) {
         guard let parsedField = field as? FCheckbox else {
             fatalError("FCheckbox -> Wrong field type.")
         }
         
         self.field = parsedField
-        self.label = label
+        self.label = label()
     }
     
     public var body: some View {
-        VStack(alignment: .leading) {
+        VStack() {
             HStack {
                 Toggle("", isOn: $field.value)
                     .labelsHidden()
-                Text(label)
+                label
                 Spacer()
             }
+            .frame(maxWidth: .infinity)
             
-            Text(field.error ?? " ")
-                .foregroundColor(.red)
-                .font(.system(size: 15))
-                .multilineTextAlignment(.leading)
-                .padding([.horizontal], 0)
-                .opacity(field.error == nil ? 0.0 : 1.0)
+            if let fieldError = field.error {
+                Text(fieldError)
+                    .foregroundColor(.red)
+                    .font(.system(size: 15))
+                    .multilineTextAlignment(.leading)
+                    .padding([.horizontal], 0)
+            }
         }
     }
 }
 
 public class FCheckbox: ObservableObject, FField {
+    @Published public var disabled: Bool
+    @Published var error: String?
     @Published var value: Bool {
         didSet {
             setError(nil)
             onChangeListener.trigger()
         }
     }
-    @Published var error: String?
-    
-    public var onChange: OnChangeListener {
-        get { return onChangeListener }
-    }
 
     fileprivate var onChangeListener: OnChangeListener
     
     public init() {
-        self.value = false
+        self.disabled = false
         self.error = nil
+        self.value = false
         
         self.onChangeListener = OnChangeListener()
+    }
+    
+    public func addOnValueChangedListener(_ onValueChanged: @escaping () -> Void) {
+        onChangeListener.add(onValueChanged)
     }
     
     public func getValue() -> AnyObject {
@@ -77,8 +81,4 @@ public class FCheckbox: ObservableObject, FField {
         
         self.value = parsedValue
     }
-}
-
-#Preview {
-    FCheckboxView(FCheckbox(), label: "Test")
 }

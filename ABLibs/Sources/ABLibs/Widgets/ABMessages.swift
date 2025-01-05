@@ -73,16 +73,14 @@ public struct ABToastView: View {
     @ObservedObject var model: ABMessages
     
     public var body: some View {
-        
-        if model.toast_Show {
+        ForEach (model.toast_Messages, id: \.self) { message in
             HStack {
                 Spacer()
-                Text(self.model.toast_Message)
+                Text(message)
                     .padding(15)
                 Spacer()
-            }
+            }.padding([.vertical], 0)
         }
-        
     }
     
     public init(_ model: ABMessages) {
@@ -107,11 +105,7 @@ public class ABMessages: ObservableObject {
     @Published fileprivate var confirmation_NoText: String
     fileprivate var confirmation_Callback: (_ result: Bool) -> Void
 
-    @Published fileprivate var toast_Show: Bool
-    @Published fileprivate var toast_Message: String
-
-    private let toast_Queue: DispatchQueue
-    private var toast_CallsCount: Int
+    @Published fileprivate var toast_Messages: [String]
     
     public init() {
         self.loading_Show = false
@@ -129,10 +123,7 @@ public class ABMessages: ObservableObject {
         self.confirmation_NoText = ""
         self.confirmation_Callback = { result in print("Confirmation callback not set.") }
         
-        self.toast_Queue = DispatchQueue(label: "ABMessages.toast.queue", attributes: .concurrent)
-        self.toast_CallsCount = 0
-        self.toast_Show = false
-        self.toast_Message = ""
+        self.toast_Messages = []
     }
     
     public func hideLoading() {
@@ -177,20 +168,11 @@ public class ABMessages: ObservableObject {
     }
     
     public func showToast(_ message: String) {
-        toast_Queue.sync {
-            toast_Message = message
-            toast_Show = true
-            toast_CallsCount += 1
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            self.toast_Queue.sync {
-                self.toast_CallsCount -= 1
-                if self.toast_CallsCount <= 0 {
-                    self.toast_CallsCount = 0
-                    self.toast_Show = false
-                    self.toast_Message = ""
-                }
+        DispatchQueue.main.async {
+            self.toast_Messages.append(message)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                self.toast_Messages.removeFirst()
             }
         }
     }
@@ -213,4 +195,9 @@ public class ABMessages: ObservableObject {
         }
     }
     
+}
+
+fileprivate struct ToastMessage: Identifiable {
+    let id: UUID
+    var message: String
 }

@@ -11,6 +11,9 @@ public class FForm {
     }
     
     public func addField(_ fieldName: String, _ field: FField) {
+        field.addOnValueChangedListener {
+            self.notifyFieldValueChanged()
+        }
         fields[fieldName] = field
     }
     
@@ -45,11 +48,17 @@ public class FForm {
     }
     
     public func notifyFieldValueChanged() {
-        if state == .noteSet {
+        if state == .notSet {
             return
         }
         
         state = .changed
+    }
+    
+    public func setDisabled(_ disabled: Bool) {
+        for (fieldName, var field) in fields {
+            field.disabled = disabled
+        }
     }
     
     public func setValidatorInfo(validator: [String: AnyObject]) {
@@ -115,7 +124,7 @@ public class FForm {
 }
 
 public enum FForm_State {
-    case noteSet
+    case notSet
     case notChanged
     case changed
 }

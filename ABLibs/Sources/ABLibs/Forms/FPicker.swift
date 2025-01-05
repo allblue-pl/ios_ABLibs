@@ -1,55 +1,110 @@
 
 import SwiftUI
 
-public struct FPickerView<FPV: FPickerValue>: View {
+public struct FPickerView<Label: View, FPV: FPickerValue>: View {
     @ObservedObject var field: FPicker<FPV>
-    let hint: String
-    let label: String?
+    @ViewBuilder let label: Label
     
-    public init(_ field: FField, hint: String, label: String? = nil) {
+    let labelMaxWidth: CGFloat?
+    let hint: String
+    let viewOrientation: FFieldViewOrientation
+    let copyCallback: (() -> Void)?
+    
+    public init(_ field: FPicker<FPV>, @ViewBuilder label: () -> Label = { EmptyView() }, labelMaxWidth: CGFloat = .infinity, hint: String, viewOrientation: FFieldViewOrientation = .vertical, copyCallback: (() -> Void)? = nil) {
         guard let parsedField = field as? FPicker<FPV> else {
             fatalError("FNumberPicker -> Wrong field type.")
         }
         
         self.field = parsedField
+        self.label = label()
+        self.labelMaxWidth = labelMaxWidth
         self.hint = hint
-        self.label = label
+        self.viewOrientation = viewOrientation
+        self.copyCallback = copyCallback
     }
     
     public var body: some View {
-        VStack(alignment: .leading) {
-            if let label {
-                Text(label)
+        if viewOrientation == .horizontal {
+            HStack {
+                FPickerView_Body<FPV, Label>(field, label: label, labelMaxWidth: labelMaxWidth, hint: hint, viewOrientation: viewOrientation, copyCallback: copyCallback)
             }
-            HStack() {
-                Text(hint)
-                Spacer()
-                Picker(hint, selection: $field.value) {
-                    ForEach(field.selection) { selectionValue in
-                        Text(selectionValue.title)
-                            .tag(selectionValue)
-                    }
-                }
-                .pickerStyle(.menu)
+        } else {
+            VStack(spacing: 0) {
+                FPickerView_Body<FPV, Label>(field, label: label, labelMaxWidth: labelMaxWidth, hint: hint, viewOrientation: viewOrientation, copyCallback: copyCallback)
             }
-            .padding([.horizontal], 8)
-            .padding([.vertical], 8)
-            .frame(maxWidth: .infinity, minHeight: 50, alignment: .center)
-            .background(Color.accentColor.opacity(0.2))
-            .cornerRadius(10)
-            
-            Text(field.error ?? " ")
+        }
+        
+        if let fieldMessage = field.error {
+            Text(fieldMessage)
                 .foregroundColor(.red)
                 .font(.system(size: 15))
                 .multilineTextAlignment(.leading)
                 .padding([.horizontal], 0)
-                .opacity(field.error == nil ? 0.0 : 1.0)
         }
     }
     
 }
 
+public struct FPickerView_Body<FPV: FPickerValue, Label: View>: View {
+    @ObservedObject var field: FPicker<FPV>
+    
+    let label: Label
+    let labelMaxWidth: CGFloat?
+    let hint: String
+    let viewOrientation: FFieldViewOrientation
+    let copyCallback: (() -> Void)?
+    
+    public var body: some View {
+        if !(label is EmptyView) {
+            HStack() {
+                label
+                if let copyCallback {
+                    Button {
+                        UIPasteboard.general.string = field.value.toString()
+                        copyCallback()
+                    } label: {
+                        Image(systemName: "document.on.document")
+                    }
+                }
+                Spacer()
+            }
+            .frame(maxWidth: labelMaxWidth)
+        }
+        HStack() {
+//                Text(hint)
+//                Spacer()
+            Picker(hint, selection: $field.value) {
+                ForEach(field.selection) { selectionValue in
+                    Text(selectionValue.title)
+                        .tag(selectionValue)
+                }
+            }
+            .pickerStyle(.menu)
+        }
+        .padding([.horizontal], 8)
+        .padding([.vertical], 8)
+        .frame(maxWidth: .infinity, minHeight: 50, alignment: .center)
+        .background(Color.accentColor.opacity(0.2))
+        .cornerRadius(10)
+    }
+    
+    public init(_ field: FField, label: Label, labelMaxWidth: CGFloat?, hint: String, viewOrientation: FFieldViewOrientation, copyCallback: (() -> Void)?) {
+        guard let parsedField = field as? FPicker<FPV> else {
+            fatalError("FNumberPicker -> Wrong field type.")
+        }
+        
+        self.field = parsedField
+        self.label = label
+        self.labelMaxWidth = labelMaxWidth
+        self.hint = hint
+        self.viewOrientation = viewOrientation
+        self.copyCallback = copyCallback
+    }
+}
+
 public class FPicker<FPV: FPickerValue>: ObservableObject, FField {
+    @Published public var disabled: Bool
+    @Published var error: String?
     @Published fileprivate var selection: [FPV]
     @Published fileprivate var value: FPV {
         didSet {
@@ -57,17 +112,13 @@ public class FPicker<FPV: FPickerValue>: ObservableObject, FField {
             onChangeListener.trigger()
         }
     }
-    @Published var error: String?
-    
-    public var onChange: OnChangeListener {
-        get { return onChangeListener }
-    }
     
     fileprivate var onChangeListener: OnChangeListener
     
     fileprivate var nullValue: AnyObject?
     
     public init(selection: [FPV], nullValue: AnyObject? = nil) {
+        self.disabled = false
         self.selection = selection
         self.value = selection[0]
         self.error = nil
@@ -76,6 +127,10 @@ public class FPicker<FPV: FPickerValue>: ObservableObject, FField {
         self.onChangeListener = OnChangeListener()
     }
             
+    public func addOnValueChangedListener(_ onValueChanged: @escaping () -> Void) {
+        onChangeListener.add(onValueChanged)
+    }
+    
     public func getValue() -> AnyObject {
         if let nullValue {
             if value.isEqualTo(nullValue) {
@@ -129,6 +184,7 @@ public protocol FPickerValue: Identifiable, Hashable {
     
     func getValue() -> AnyObject
     func isEqualTo(_ compareValue: AnyObject) -> Bool
+    func toString() -> String
 }
 
 
@@ -160,4 +216,7 @@ public struct FIntPickerValue: FPickerValue {
         return value == compareValue_Parsed
     }
     
+    public func toString() -> String {
+        return String(value)
+    }
 }
