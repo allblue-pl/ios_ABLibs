@@ -8,7 +8,7 @@ public struct ABMessagesView: View {
     public var body: some View {
         ZStack {
             if model.loading_Show {
-                VStack {
+                VStack(spacing: 1) {
                     Image(systemName: "ellipsis")
                         .resizable()
                         .scaledToFit()

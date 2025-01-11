@@ -44,12 +44,15 @@ public struct FDateView<Label: View>: View {
                 }
             }
             
-            if let fieldMessage = field.error {
-                Text(fieldMessage)
-                    .foregroundColor(.red)
-                    .font(.system(size: 15))
-                    .multilineTextAlignment(.leading)
-                    .padding([.horizontal], 0)
+            if let fieldError = field.error {
+                HStack {
+                    Text(fieldError)
+                        .foregroundColor(.red)
+                        .font(.system(size: 15))
+                        .multilineTextAlignment(.leading)
+                        .padding([.horizontal], 0)
+                    Spacer()
+                }
             }
         }
     }
@@ -141,8 +144,7 @@ struct FDateModalView: View {
                 Rectangle()
                     .fill(Color(UIColor.systemBackground))
                     .onTapGesture {
-//                        field.afterDateSet()
-                        field.showPicker = false
+                        cancel()
                     }
                 
                 DatePicker(
@@ -156,14 +158,12 @@ struct FDateModalView: View {
                 Rectangle()
                     .fill(Color(UIColor.systemBackground))
                     .onTapGesture {
-//                        field.afterDateSet()
-                        field.showPicker = false
+                        cancel()
                     }
                 
                 HStack {
                     Button(action: {
-//                        field.afterDateSet()
-                        field.showPicker = false
+                        cancel()
                     }, label: {
                         Label(Lang.t(TABLibs.texts_Cancel), systemImage: "multiply.circle")
                             .foregroundStyle(Color.red)
@@ -171,9 +171,7 @@ struct FDateModalView: View {
                     .padding(30)
                     
                     Button(action: {
-                        field.afterDateSet()
-                        field.showPicker = false
-                        field.onChangeListener.trigger()
+                        ok()
                     }, label: {
                         Label(Lang.t(TABLibs.texts_Ok), systemImage: "checkmark")
                     })
@@ -183,10 +181,34 @@ struct FDateModalView: View {
         }
     }
     
+    private func cancel() {
+        field.showPicker = false
+        field.date = Date(timeIntervalSince1970: TimeInterval(FDate.parseValue(field.defaultValue, utc: field.utc)))
+    }
+    
+    private func ok() {
+        field.afterDateSet()
+        field.onChangeListener.trigger()
+        field.showPicker = false
+    }
+    
 }
 
 public class FDate: ObservableObject, FField {
-    static private func parseValue(_ value: Int64, utc: Bool) -> Int64 {
+    static func parseDate(_ date: Date, utc: Bool) -> Int64 {
+        var value = Int64(date.timeIntervalSince1970)
+        value += Int64(TimeZone.current.secondsFromGMT())
+        if utc {
+            value = ABDate.getDay_UTC(time: value)
+        } else {
+            value -= ABDate.getUTCOffset_Seconds(value)
+            value = ABDate.getDay(time: value)
+        }
+        
+        return value
+    }
+    
+    static func parseValue(_ value: Int64, utc: Bool) -> Int64 {
         var parsedValue = value
         parsedValue -= Int64(TimeZone.current.secondsFromGMT())
         if utc {
@@ -200,13 +222,13 @@ public class FDate: ObservableObject, FField {
     }
     
     @Published public var disabled: Bool
-    @Published fileprivate var date: Date {
-        didSet {
-            afterDateSet()
-            showPicker = false
-            onChangeListener.trigger()
-        }
-    }
+    @Published fileprivate var date: Date
+//        didSet {
+//            afterDateSet()
+//            showPicker = false
+//            onChangeListener.trigger()
+//        }
+//    }
     @Published var date_Str: String
     @Published var date_Empty: Bool
     
@@ -237,9 +259,8 @@ public class FDate: ObservableObject, FField {
     
     func afterDateSet() {
         setError(nil)
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .short
-        date_Str = dateFormatter.string(from: date)
+        let value = FDate.parseDate(date, utc: utc)
+        date_Str = utc ? ABDate.format_Date_UTC(time: value) : ABDate.format_Date(time: value)
         date_Empty = false
     }
     
@@ -248,7 +269,7 @@ public class FDate: ObservableObject, FField {
             return nil
         }
         
-        return Int64(date.timeIntervalSince1970)
+        return FDate.parseDate(date, utc: utc)
     }
     
     public func getValue() -> AnyObject {
@@ -268,13 +289,16 @@ public class FDate: ObservableObject, FField {
             date = Date(timeIntervalSince1970: TimeInterval(FDate.parseValue(defaultValue, utc: utc)))
             date_Str = "-"
             date_Empty = true
+            onChangeListener.trigger()
             return
         }
         
         guard var parsedValue = value as? Int64 else {
             print("FText -> Cannot parse value.")
+            date = Date(timeIntervalSince1970: TimeInterval(FDate.parseValue(defaultValue, utc: utc)))
             date_Str = "-"
             date_Empty = true
+            onChangeListener.trigger()
             return
         }
         
@@ -288,6 +312,7 @@ public class FDate: ObservableObject, FField {
         
         date = Date(timeIntervalSince1970: TimeInterval(parsedValue))
         afterDateSet()
+        onChangeListener.trigger()
     }
     
 }

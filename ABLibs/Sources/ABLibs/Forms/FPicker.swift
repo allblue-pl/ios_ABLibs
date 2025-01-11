@@ -34,12 +34,15 @@ public struct FPickerView<Label: View, FPV: FPickerValue>: View {
             }
         }
         
-        if let fieldMessage = field.error {
-            Text(fieldMessage)
-                .foregroundColor(.red)
-                .font(.system(size: 15))
-                .multilineTextAlignment(.leading)
-                .padding([.horizontal], 0)
+        if let fieldError = field.error {
+            HStack {
+                Text(fieldError)
+                    .foregroundColor(.red)
+                    .font(.system(size: 15))
+                    .multilineTextAlignment(.leading)
+                    .padding([.horizontal], 0)
+                Spacer()
+            }
         }
     }
     

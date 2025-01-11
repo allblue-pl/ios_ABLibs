@@ -18,6 +18,7 @@ public struct FCheckboxView<Label: View>: View {
         VStack() {
             HStack {
                 Toggle("", isOn: $field.value)
+                    .disabled(field.disabled)
                     .labelsHidden()
                 label
                 Spacer()
@@ -25,11 +26,14 @@ public struct FCheckboxView<Label: View>: View {
             .frame(maxWidth: .infinity)
             
             if let fieldError = field.error {
-                Text(fieldError)
-                    .foregroundColor(.red)
-                    .font(.system(size: 15))
-                    .multilineTextAlignment(.leading)
-                    .padding([.horizontal], 0)
+                HStack {
+                    Text(fieldError)
+                        .foregroundColor(.red)
+                        .font(.system(size: 15))
+                        .multilineTextAlignment(.leading)
+                        .padding([.horizontal], 0)
+                    Spacer()
+                }
             }
         }
     }

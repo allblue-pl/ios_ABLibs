@@ -39,11 +39,14 @@ public struct FTextView<Label: View>: View {
             }
             
             if let fieldError = field.error {
-                Text(fieldError)
-                    .foregroundColor(.red)
-                    .font(.system(size: 15))
-                    .multilineTextAlignment(.leading)
-                    .padding([.horizontal], 0)
+                HStack {
+                    Text(fieldError)
+                        .foregroundColor(.red)
+                        .font(.system(size: 15))
+                        .multilineTextAlignment(.leading)
+                        .padding([.horizontal], 0)
+                    Spacer()
+                }
             }
         }
     }
