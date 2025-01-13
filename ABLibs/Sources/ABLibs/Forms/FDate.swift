@@ -178,6 +178,7 @@ struct FDateModalView: View {
                     .padding(30)
                 }
             }
+            .frame(maxWidth: 320)
         }
     }
     
