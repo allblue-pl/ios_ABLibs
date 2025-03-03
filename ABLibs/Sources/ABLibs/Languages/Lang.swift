@@ -23,9 +23,10 @@ public class Lang {
     }
     
     public static func t(_ text: any Hashable, _ args: [String: String] = [:]) -> String {
-        if let textTranslation = textTranslations[text.hashValue] {
+        if var textTranslation = textTranslations[text.hashValue] {
             for (argName, argValue) in args {
-                textTranslation.replacingOccurrences(of: "{\(argName)}", with: argValue)
+                print(argName, argValue)
+                textTranslation = textTranslation.replacingOccurrences(of: "{\(argName)}", with: argValue)
             }
             
             return textTranslation
